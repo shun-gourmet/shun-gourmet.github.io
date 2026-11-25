@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>しゅんの絶品グルメ</title>
+<meta name="description" content="しゅんがInstagramで紹介したお店を、駅・ジャンル・地図から探せるまとめサイト。">
+<meta property="og:title" content="しゅんの絶品グルメ">
+<meta property="og:description" content="紹介したお店を、駅・ジャンル・地図から探せます。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://shun-gourmet.github.io/">
+<meta property="og:image" content="https://shun-gourmet.github.io/img/icon.jpg">
+<link rel="icon" href="img/icon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --bg:#FAF7F2;          /* 生成り */
+  --card:#FFFFFF;
+  --ink:#2B2522;          /* 文字 */
+  --sub:#7A6F68;          /* 補足の文字 */
+  --line:#E8E1D8;         /* 罫線 */
+  --accent:#C8401C;       /* 唐辛子の赤 */
+  --accent-soft:#FBE9E2;
+  --chip:#F1ECE5;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans JP",sans-serif;line-height:1.7;-webkit-text-size-adjust:100%}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+
+/* ヘッダー */
+header.top{background:var(--ink);color:#fff}
+header.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:14px;padding-bottom:14px}
+.logo{font-weight:900;font-size:20px;letter-spacing:.04em;text-decoration:none}
+.logo span{color:#FF8A5C}
+.sns{display:flex;gap:6px;flex-shrink:0}
+.sns a{font-size:12px;text-decoration:none;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:4px 12px}
+.sns a:hover{background:rgba(255,255,255,.12)}
+
+.hero{padding:36px 0 8px}
+.hero h1{margin:0;font-size:clamp(26px,5vw,40px);font-weight:900;line-height:1.3}
+.hero p{margin:8px 0 0;color:var(--sub);font-size:14px}
+
+
+/* プロフィール */
+.profile{display:flex;gap:20px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:24px}
+.profile img{width:112px;height:112px;border-radius:50%;object-fit:cover;flex-shrink:0;border:3px solid #fff;box-shadow:0 0 0 2px var(--accent)}
+.profile .pname{margin:0;font-size:18px;font-weight:900}
+.profile .pid{font-size:13px;color:var(--sub)}
+.profile ul{list-style:none;margin:8px 0 0;padding:0;font-size:14px}
+.profile li::before{content:"・";color:var(--accent)}
+.stats{display:flex;flex-wrap:wrap;gap:16px;margin-top:8px;font-size:13px;color:var(--sub)}
+.stats b{color:var(--ink);font-size:16px;margin-right:2px}
+.follow{display:inline-block;margin-top:12px;background:var(--accent);color:#fff;text-decoration:none;font-size:13px;font-weight:700;border-radius:999px;padding:8px 18px}
+.follow:hover{opacity:.9}
+
+/* 特集 */
+h2.sec{font-size:15px;font-weight:700;margin:32px 0 12px;display:flex;align-items:center;gap:8px}
+h2.sec::before{content:"";width:4px;height:18px;background:var(--accent);border-radius:2px}
+.features{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.feature{position:relative;border:0;border-radius:14px;padding:18px 14px 14px;text-align:left;color:#fff;min-height:110px;overflow:hidden;transition:transform .15s}
+.feature:hover{transform:translateY(-2px)}
+.feature .en{font-size:11px;letter-spacing:.18em;opacity:.85}
+.feature .ja{display:block;font-size:22px;font-weight:900;margin-top:2px}
+.feature .n{display:block;font-size:12px;margin-top:6px;opacity:.9}
+.feature[aria-pressed="true"]{outline:3px solid var(--ink);outline-offset:2px}
+.f-osaka{background:linear-gradient(135deg,#E0533D,#F29A4A)}
+.f-nagoya{background:linear-gradient(135deg,#B8860B,#E3B23C)}
+.f-okinawa{background:linear-gradient(135deg,#0F8FA8,#3CC6C0)}
+.f-hawaii{background:linear-gradient(135deg,#2E6E3F,#6FB26B)}
+
+/* 絞り込み */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:24px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.row + .row{margin-top:12px}
+.row .k{font-size:12px;color:var(--sub);width:72px;flex-shrink:0}
+select,input[type=search]{font:inherit;font-size:14px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff;color:var(--ink);min-width:0}
+input[type=search]{flex:1}
+.chips{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+.chip{border:1px solid transparent;background:var(--chip);border-radius:999px;padding:4px 12px;font-size:13px}
+.chip[aria-pressed="true"]{background:var(--accent);color:#fff}
+.chip .c{font-size:11px;opacity:.7;margin-left:4px}
+
+.bar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:20px 0 12px;flex-wrap:wrap}
+.count{font-size:14px;color:var(--sub)}
+.count b{color:var(--ink);font-size:18px}
+.tabs{display:inline-flex;background:var(--chip);border-radius:999px;padding:3px}
+.tabs button{border:0;background:transparent;border-radius:999px;padding:6px 16px;font-size:13px;font-weight:700}
+.tabs button[aria-selected="true"]{background:var(--ink);color:#fff}
+.clear{border:0;background:none;color:var(--accent);font-size:13px;text-decoration:underline}
+
+/* リスト */
+.list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.shop{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;gap:18px;align-items:flex-start}
+.shop .ph{width:180px;aspect-ratio:1;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--chip)}
+.shop .bd{flex:1;min-width:0}
+.shop .meta{display:flex;flex-wrap:wrap;gap:6px;font-size:12px}
+.tag{background:var(--chip);border-radius:6px;padding:2px 8px}
+.tag.genre{background:var(--accent-soft);color:var(--accent);font-weight:700}
+.tag.date{background:none;color:var(--sub);padding-left:0}
+.shop h3{margin:6px 0 4px;font-size:18px;line-height:1.45}
+.shop .lead{margin:0;font-size:14px}
+.shop dl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:10px 0 0;font-size:13px}
+.shop dt{color:var(--sub)}
+.shop dd{margin:0}
+.links{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.links a,.links button{font-size:13px;text-decoration:none;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;display:inline-flex;align-items:center;gap:6px}
+.links a:hover,.links button:hover{border-color:var(--ink)}
+.links .ig{background:var(--ink);color:#fff;border-color:var(--ink)}
+.empty{background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:32px 16px;text-align:center;color:var(--sub)}
+
+/* 地図 */
+#map{height:min(70vh,560px);border-radius:14px;border:1px solid var(--line);z-index:0}
+.map-note{font-size:12px;color:var(--sub);margin-top:6px}
+.pop img{width:100%;max-width:200px;aspect-ratio:1;object-fit:cover;border-radius:6px;display:block;margin-bottom:6px}
+.pop h4{margin:0 0 2px;font-size:14px}
+.pop p{margin:0;font-size:12px;color:var(--sub)}
+.pop a{display:inline-block;margin-top:6px;font-size:12px;color:var(--accent)}
+
+/* Instagramの埋め込み */
+dialog{border:0;border-radius:14px;padding:0;max-width:min(540px,calc(100vw - 32px));width:100%;max-height:90vh}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+dialog .head{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);font-size:14px;font-weight:700;position:sticky;top:0;background:#fff;z-index:1}
+dialog .head button{border:0;background:none;font-size:22px;line-height:1}
+dialog .body{padding:12px}
+
+footer{margin-top:56px;padding:28px 0;border-top:1px solid var(--line);font-size:12px;color:var(--sub);text-align:center}
+footer a{margin:0 6px}
+
+@media (max-width:720px){
+  .features{grid-template-columns:repeat(2,1fr)}
+  .row .k{width:100%}
+  .profile{flex-direction:column;text-align:center}
+  .profile ul{text-align:left;display:inline-block}
+  .stats{justify-content:center}
+  .logo{font-size:17px;white-space:nowrap}
+  .sns a{font-size:11px;padding:3px 10px;white-space:nowrap}
+  .shop{padding:14px;flex-direction:column;gap:12px}
+  .shop .ph{width:100%;aspect-ratio:4/3}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="./">しゅんの<span>絶品</span>グルメ</a>
+    <nav class="sns">
+      <a href="https://www.instagram.com/shun_gourmet_search/" target="_blank" rel="noopener">Instagram</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <h1>駅とジャンルで探せる、<br>しゅんの絶品グルメ。</h1>
+    <p>Instagramで紹介したお店をまとめています。</p>
+  </section>
+
+
+  <section class="profile" aria-label="プロフィール">
+    <img src="img/icon.jpg" alt="しゅんのアイコン" width="112" height="112">
+    <div>
+      <p class="pname">しゅん</p>
+      <span class="pid">@shun_gourmet_search</span>
+      <ul>
+        <li>色々な“うまい!!”をシェアします</li>
+        <li>都内・全国のグルメを発信</li>
+                <li>旅行×食べ歩きが大好きです</li>
+      </ul>
+      <div class="stats"><span><b>663</b>投稿</span><span><b>7,353</b>フォロワー</span><span>（2026年11月時点）</span></div>
+      <a class="follow" href="https://www.instagram.com/shun_gourmet_search/" target="_blank" rel="noopener">Instagramをフォローする</a>
+    </div>
+  </section>
+
+  <h2 class="sec">遠征グルメ特集</h2>
+  <div class="features" id="features"></div>
+
+  <section class="panel" aria-label="絞り込み">
+    <div class="row">
+      <label class="k" for="q">キーワード</label>
+      <input type="search" id="q" placeholder="店名・メニュー・駅など">
+    </div>
+    <div class="row">
+      <label class="k" for="area">地域</label>
+      <select id="area"><option value="">すべての地域</option></select>
+      <select id="sort" aria-label="並べ替え">
+        <option value="new">新しい順</option>
+        <option value="old">古い順</option>
+        <option value="station">駅名順</option>
+      </select>
+    </div>
+    <div class="row">
+      <span class="k">駅</span>
+      <div class="chips" id="stations"></div>
+    </div>
+    <div class="row">
+      <span class="k">ジャンル</span>
+      <div class="chips" id="genres"></div>
+    </div>
+  </section>
+
+  <div class="bar">
+    <div class="count"><b id="num">-</b> 件 <button class="clear" id="clear" hidden>条件をクリア</button></div>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-list" aria-selected="true">リスト</button>
+      <button role="tab" id="tab-map" aria-selected="false">地図</button>
+    </div>
+  </div>
+
+  <section id="view-list">
+    <ul class="list" id="list"><li class="empty">読み込み中…</li></ul>
+  </section>
+  <section id="view-map" hidden>
+    <div id="map"></div>
+    <p class="map-note" id="map-note"></p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a href="https://www.instagram.com/shun_gourmet_search/" target="_blank" rel="noopener">Instagram</a>
+    <p>© しゅんの絶品グルメ ／ 営業時間・価格は投稿時点のものです。お出かけ前にお店へご確認ください。</p>
+  </div>
+</footer>
+
+<dialog id="ig">
+  <div class="head"><span id="ig-title"></span><button id="ig-close" aria-label="閉じる">×</button></div>
+  <div class="body" id="ig-body"></div>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* ===== 設定 ===== */
+// お店リスト（Googleスプレッドシート）。「お店」シートを読み込む
+const SHEET_ID = '1BuvFJEEckd-mUxdCv2iIG-QbE6MRiJ8QwX0pcA-bjrU';
+const SHEET_NAME = 'お店';
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&headers=1&sheet=${encodeURIComponent(SHEET_NAME)}`;
+
+// 遠征グルメ特集。match に当てはまるお店をまとめる（「地域」列 → 住所 の順に見る）
+const FEATURES = [
+  {key:'大阪',   en:'OSAKA',   cls:'f-osaka',   match:s => s.region==='大阪' || /大阪府/.test(s.address)},
+  {key:'名古屋', en:'NAGOYA',  cls:'f-nagoya',  match:s => s.region==='名古屋' || /名古屋市/.test(s.address)},
+  {key:'沖縄',   en:'OKINAWA', cls:'f-okinawa', match:s => s.region==='沖縄' || /沖縄県/.test(s.address)},
+  {key:'ハワイ島', en:'HAWAII ISLAND', cls:'f-hawaii', match:s => s.region==='ハワイ島' || /ハワイ島|Hawaii Island|Big Island/i.test(s.address)},
+];
+
+/* ===== CSV ===== */
+function parseCSV(text){
+  const rows=[];let row=[],cell='',q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ row.push(cell); cell=''; }
+    else if(c==='\n'){ row.push(cell); rows.push(row); row=[]; cell=''; }
+    else if(c!=='\r') cell+=c;
+  }
+  if(cell!==''||row.length){ row.push(cell); rows.push(row); }
+  return rows;
+}
+function toShops(rows){
+  const head=rows[0].map(h=>h.trim());
+  const col=name=>head.findIndex(h=>h.startsWith(name));
+  const idx={name:col('店名'),station:col('最寄り駅'),genre:col('ジャンル'),lead:col('ひとこと'),date:col('投稿日'),
+    ig:col('Instagram'),gmap:col('Googleマップ'),address:col('住所'),hours:col('営業時間'),
+    closed:col('定休日'),menu:col('注文したメニュー'),region:col('地域'),coord:col('座標')};
+  const get=(r,k)=>idx[k]>=0 ? (r[idx[k]]||'').trim() : '';
+  return rows.slice(1).map(r=>({
+    name:get(r,'name'),station:get(r,'station').replace(/駅$/,''),genre:get(r,'genre'),lead:get(r,'lead'),
+    date:get(r,'date'),ig:get(r,'ig'),gmap:get(r,'gmap'),address:get(r,'address'),
+    hours:get(r,'hours'),closed:get(r,'closed'),menu:get(r,'menu'),region:get(r,'region'),coord:get(r,'coord'),
+  })).filter(s=>s.name);
+}
+// 地域：「地域」列があればそれ、なければ住所の都道府県
+function regionOf(s){
+  if(s.region) return s.region;
+  const m=s.address.match(/^(東京都|北海道|(?:京都|大阪)府|.{2,3}県)/);
+  return m ? m[1].replace(/[都府県]$/,'') : '';
+}
+// 写真：img/shops/店名.jpg（無ければ出さない）
+const photo=s=>'img/shops/'+encodeURIComponent(s.name)+'.jpg';
+const dateNum=d=>{const m=d.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);return m?+m[1]*10000+ +m[2]*100+ +m[3]:0};
+
+/* ===== 状態 ===== */
+let SHOPS=[];
+const state={q:'',area:'',feature:'',station:'',genre:'',sort:'new',view:'list'};
+const $=id=>document.getElementById(id);
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeUrl=u=>/^https:\/\//.test(u)?u:'';
+
+function base(){ // 駅・ジャンル以外の条件
+  const q=state.q.toLowerCase();
+  const f=FEATURES.find(f=>f.key===state.feature);
+  return SHOPS.filter(s=>
+    (!f || f.match(s)) &&
+    (!state.area || s._region===state.area) &&
+    (!q || [s.name,s.station,s.genre,s.lead,s.menu,s.address].join(' ').toLowerCase().includes(q)));
+}
+function filtered(){
+  return base().filter(s=>(!state.station||s.station===state.station)&&(!state.genre||s.genre===state.genre))
+    .sort((a,b)=> state.sort==='old' ? dateNum(a.date)-dateNum(b.date)
+      : state.sort==='station' ? a.station.localeCompare(b.station,'ja') : dateNum(b.date)-dateNum(a.date));
+}
+function countBy(list,key){const m=new Map();list.forEach(s=>s[key]&&m.set(s[key],(m.get(s[key])||0)+1));return [...m].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'ja'))}
+
+/* ===== 表示 ===== */
+function renderFeatures(){
+  $('features').innerHTML=FEATURES.map(f=>{
+    const n=SHOPS.filter(f.match).length;
+    return `<button class="feature ${f.cls}" data-f="${esc(f.key)}" aria-pressed="${state.feature===f.key}">
+      <span class="en">${f.en}</span><span class="ja">${esc(f.key)}</span>
+      <span class="n">${n?n+' 件':'準備中'}</span></button>`;
+  }).join('');
+}
+function renderChips(el,list,key){
+  const b=base();
+  const src= key==='station' ? b.filter(s=>!state.genre||s.genre===state.genre) : b.filter(s=>!state.station||s.station===state.station);
+  const items=countBy(src,key);
+  if(state[key] && !items.some(([v])=>v===state[key])) items.unshift([state[key],0]);
+  el.innerHTML=`<button class="chip" data-v="" aria-pressed="${!state[key]}">すべて</button>`+
+    items.map(([v,n])=>`<button class="chip" data-v="${esc(v)}" aria-pressed="${state[key]===v}">${esc(v)}<span class="c">${n}</span></button>`).join('');
+}
+function shopHTML(s){
+  const rows=[['駅',s.station?s.station+'駅':''],['住所',s.address],['営業時間',s.hours],['定休日',s.closed],['メニュー',s.menu]]
+    .filter(r=>r[1]).map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('');
+  const mapUrl=safeUrl(s.gmap) || (s.address?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.name+' '+s.address)}`:'');
+  return `<li class="shop">
+    <img class="ph" src="${photo(s)}" alt="${esc(s.name)}の料理" loading="lazy" onerror="this.remove()">
+    <div class="bd">
+    <div class="meta">${s.genre?`<span class="tag genre">${esc(s.genre)}</span>`:''}${s.station?`<span class="tag">${esc(s.station)}</span>`:''}${s._region?`<span class="tag">${esc(s._region)}</span>`:''}${s.date?`<span class="tag date">${esc(s.date)} 投稿</span>`:''}</div>
+    <h3>${esc(s.name)}</h3>
+    ${s.lead?`<p class="lead">${esc(s.lead)}</p>`:''}
+    ${rows?`<dl>${rows}</dl>`:''}
+    <div class="links">
+      ${safeUrl(s.ig)?`<button class="ig" data-ig="${esc(s.ig)}" data-name="${esc(s.name)}">Instagramの投稿を見る</button>`:''}
+      ${mapUrl?`<a href="${esc(mapUrl)}" target="_blank" rel="noopener">Googleマップ</a>`:''}
+    </div></div></li>`;
+}
+function render(){
+  renderFeatures();
+  renderChips($('stations'),SHOPS,'station');
+  renderChips($('genres'),SHOPS,'genre');
+  const list=filtered();
+  $('num').textContent=list.length;
+  $('clear').hidden=!(state.q||state.area||state.feature||state.station||state.genre);
+  const f=FEATURES.find(f=>f.key===state.feature);
+  $('list').innerHTML=list.length?list.map(shopHTML).join('')
+    :`<li class="empty">${f&&!SHOPS.some(f.match)?`${esc(f.key)}特集は準備中です。お楽しみに。`:'条件に合うお店がありません。'}</li>`;
+  if(state.view==='map') drawMap(list);
+}
+
+/* ===== 地図 ===== */
+let map,layer;
+const geoCache=(()=>{try{return JSON.parse(localStorage.getItem('geo')||'{}')}catch(e){return {}}})();
+function saveGeo(){try{localStorage.setItem('geo',JSON.stringify(geoCache))}catch(e){}}
+async function locate(s){
+  const m=s.coord.match(/(-?\d+(?:\.\d+)?)\s*[,，\s]\s*(-?\d+(?:\.\d+)?)/);
+  if(m) return [+m[1],+m[2]];
+  if(!s.address) return null;
+  const addr=(s.address.match(/^.*?\d+(?:[\-－‐]\d+)*/)||[s.address])[0]; // 番地より後ろ（建物名・階など）を外す
+  if(geoCache[addr]) return geoCache[addr];
+  if(!/^(東京都|北海道|京都府|大阪府|.{2,3}県)/.test(s.address)) return null; // 国土地理院は国内の住所のみ
+  try{
+    const r=await fetch('https://msearch.gsi.go.jp/address-search/AddressSearch?q='+encodeURIComponent(addr));
+    const j=await r.json();
+    if(j[0]){const [lng,lat]=j[0].geometry.coordinates;geoCache[addr]=[lat,lng];saveGeo();return [lat,lng];}
+  }catch(e){}
+  return null;
+}
+async function drawMap(list){
+  if(!window.L){$('map-note').textContent='地図を読み込めませんでした。';return}
+  if(!map){
+    map=L.map('map',{scrollWheelZoom:false}).setView([35.68,139.76],10);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
+    layer=L.layerGroup().addTo(map);
+  }
+  setTimeout(()=>map.invalidateSize(),0);
+  layer.clearLayers();
+  const pts=[];let miss=0;
+  for(const s of list){
+    const p=await locate(s);
+    if(!p){miss++;continue}
+    pts.push(p);
+    L.marker(p).addTo(layer).bindPopup(`<div class="pop"><img src="${photo(s)}" alt="" onerror="this.remove()"><h4>${esc(s.name)}</h4><p>${esc([s.genre,s.station&&s.station+'駅'].filter(Boolean).join(' ・ '))}</p>${s.lead?`<p>${esc(s.lead.slice(0,60))}${s.lead.length>60?'…':''}</p>`:''}<a href="#" data-goto="${esc(s.name)}">リストで見る</a></div>`);
+  }
+  if(pts.length===1) map.setView(pts[0],15);
+  else if(pts.length) map.fitBounds(pts,{padding:[30,30],maxZoom:15});
+  $('map-note').textContent=`${pts.length} 件を地図に表示しています。`+(miss?`（住所から場所が分からなかったお店 ${miss} 件は表示していません）`:'');
+}
+
+/* ===== Instagramの埋め込み ===== */
+function openIG(url,name){
+  const u=url.split('?')[0].replace(/\/?$/,'/');
+  $('ig-title').textContent=name;
+  $('ig-body').innerHTML=`<blockquote class="instagram-media" data-instgrm-permalink="${esc(u)}" data-instgrm-version="14" style="margin:0 auto;max-width:100%;min-width:0"><a href="${esc(u)}" target="_blank" rel="noopener">Instagramで見る</a></blockquote>`;
+  $('ig').showModal();
+  if(window.instgrm) window.instgrm.Embeds.process();
+  else{const sc=document.createElement('script');sc.src='https://www.instagram.com/embed.js';sc.async=true;document.body.appendChild(sc);}
+}
+
+/* ===== 操作 ===== */
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button,a');if(!t)return;
+  if(t.dataset.f!==undefined){state.feature=state.feature===t.dataset.f?'':t.dataset.f;state.area='';$('area').value='';state.station='';render();}
+  else if(t.closest('#stations')){state.station=t.dataset.v;render();}
+  else if(t.closest('#genres')){state.genre=t.dataset.v;render();}
+  else if(t.dataset.ig){openIG(t.dataset.ig,t.dataset.name);}
+  else if(t.dataset.goto!==undefined){e.preventDefault();state.q=t.dataset.goto;$('q').value=state.q;setView('list');render();}
+});
+$('q').addEventListener('input',e=>{state.q=e.target.value.trim();render();});
+$('area').addEventListener('change',e=>{state.area=e.target.value;state.feature='';state.station='';render();});
+$('sort').addEventListener('change',e=>{state.sort=e.target.value;render();});
+$('clear').addEventListener('click',()=>{Object.assign(state,{q:'',area:'',feature:'',station:'',genre:''});$('q').value='';$('area').value='';render();});
+$('ig-close').addEventListener('click',()=>$('ig').close());
+$('ig').addEventListener('click',e=>{if(e.target===$('ig'))$('ig').close();});
+function setView(v){
+  state.view=v;
+  $('tab-list').setAttribute('aria-selected',v==='list');$('tab-map').setAttribute('aria-selected',v==='map');
+  $('view-list').hidden=v!=='list';$('view-map').hidden=v!=='map';
+}
+$('tab-list').addEventListener('click',()=>{setView('list');render();});
+$('tab-map').addEventListener('click',()=>{setView('map');render();});
+
+/* ===== 読み込み ===== */
+fetch(CSV_URL).then(r=>{if(!r.ok)throw 0;return r.text()}).then(t=>{
+  SHOPS=toShops(parseCSV(t));
+  SHOPS.forEach(s=>s._region=regionOf(s));
+  const areas=countBy(SHOPS,'_region');
+  $('area').insertAdjacentHTML('beforeend',areas.map(([v,n])=>`<option value="${esc(v)}">${esc(v)}（${n}）</option>`).join(''));
+  render();
+}).catch(()=>{$('list').innerHTML='<li class="empty">お店リストを読み込めませんでした。時間をおいて開き直してください。</li>';$('num').textContent='0';});
+</script>
+</body>
+</html>
